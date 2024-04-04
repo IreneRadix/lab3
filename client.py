@@ -22,14 +22,7 @@ class Client:
             string_buff = b''
             while data := self.sock.recv(1024):
                 string_buff += data
-
-            if message.startswith("GET_FILE"):
-                with open('downloaded_file.json', 'wb') as f:
-                    f.write(string_buff)
-                print('File downloaded')
-
-            else:
-                print(string_buff.decode())
+            print(string_buff.decode())
 
         except:
             print('Invalid response from server')
