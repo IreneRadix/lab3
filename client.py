@@ -1,24 +1,31 @@
 import socket
-#from signal import signal, SIGPIPE, SIG_DFL
-#signal(SIGPIPE,SIG_DFL)
 
-sock = socket.socket()
-sock.setblocking(1)
-sock.connect(('localhost', 9090))
 
-msg = input()
-sock.send(msg.encode())
+def user(host='localhost', port=9090):
+    try:
+        with socket.socket() as s:
+            print(">>> Соединение с сервером")
+            s.connect((host, port))
+            while True:
+                inp = input(">>> Input: ")
+                if inp == "exit":
+                    s.close()
+                    print(">>> Разрыв соединения с сервером")
+                    break
+                print(">>> Отправка данных серверу")
+                s.send(inp.encode())
+                print(">>> Прием данных от сервера")
+                data = s.recv(1024)
+                datad = data.decode()
+                if datad == "":
+                    s.close()
+                    print(">>> Разрыв соединения с сервером")
+                    break
+                print('>>> Echoing: ', datad)
 
-#file = open('./received_file.txt', 'w')
-#data = sock.recv(1024)
-while True:
-    data = sock.recv(1024)
+    except KeyboardInterrupt:
+        exit(0)
 
-    if not data:
-        break
-    print(data.decode())
-    #file.write(data.decode())
 
-sock.close()
-
-print(data.decode())
+if __name__ == '__main__':
+    user()
