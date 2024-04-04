@@ -30,7 +30,7 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind(('localhost', 9090))
 server_socket.listen(1)
 
-print('Программа 1 запущена. Ожидание подключения...')
+print('Сервер запущен. Ожидание подключения...')
 
 while True:
     conn, addr = server_socket.accept()
