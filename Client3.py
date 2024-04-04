@@ -2,7 +2,7 @@ import socket
 
 def get_program_data():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect(('localhost', 8000))
+    client_socket.connect(('localhost', 9090))
     data = b''
     while True:
         recv_data = client_socket.recv(1024)
