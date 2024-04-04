@@ -1,4 +1,4 @@
-
+import json
 import socket
 import sys
 import time
@@ -62,11 +62,42 @@ def read_request(client_sock):
   except:
     raise
 
+def make_file():
+    path_dirs = os.getenv('PATH').split(os.pathsep)
+    data = {}
+
+    for path_dir in path_dirs:
+      for root, dirs, files in os.walk(path_dir):
+        executables = [f for f in files if os.access(os.path.join(root, f), os.X_OK)]
+        if executables:
+          data[root] = executables
+
+    with open('./program_data.json', 'w') as file:
+      json.dump(data, file, indent=4)
+
+    f = open('./program_data.json')
+    resp = f.read()
+    f.close()
+
+
+    return resp
+
+
 def handle_request(request):
   #time.sleep(5)
-  return request[::-1]
+  if request.decode('utf-8') == 'var_4':
+    return make_file().encode('utf-8')
+  # здесь дописываешь if со своим вариантом, и вызываешь функцию, которая возвращает то, что сервер должен выдавать в соответствии с вариантом
 
 def write_response(client_sock, response):
+  '''
+   while True:
+      file_data = file.read(1024)
+      conn.send(file_data)
+      if not file_data:
+        break
+    conn.close()
+  '''
   client_sock.sendall(response)
 
 def write_response_close(client_sock, cid):
