@@ -40,7 +40,7 @@ class Client:
 
     def main(self):
         while True:
-            u_command = input('Введите команду на отправку на сервер:\n\n''
+            u_command = input('Введите команду на отправку на сервер:\n\n'
                               '(0) exit\n>>')
 
             if u_command == 'exit':
