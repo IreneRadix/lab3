@@ -25,6 +25,7 @@ class Program:
 
     @staticmethod
     def save_file_info(file_info):
+        print('i save')
         with open("files_info.json", "w") as json_file:
             json.dump(file_info, json_file, indent=4)
 

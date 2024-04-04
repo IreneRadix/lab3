@@ -3,8 +3,8 @@ import socket
 
 class Client:
     def __init__(self):
-        self.port = int(input('input port number > '))
-        self.host = input('input host > ')
+        self.port = 65432
+        self.host = 'localhost'
         self.sock = None
 
     def __get_connection(self):
@@ -12,20 +12,42 @@ class Client:
         sock.connect((self.host, self.port))
         return sock
 
+    def send_command(self, message):
+        if not self.sock:
+            self.sock = self.__get_connection()
+
+        self.sock.sendall(message.encode())
+
+        try:
+            string_buff = b''
+            while data := self.sock.recv(1024):
+                string_buff += data
+
+            if message.startswith("GET_FILE"):
+                with open('downloaded_file.json', 'wb') as f:
+                    f.write(string_buff)
+                print('File downloaded')
+
+            else:
+                print(string_buff.decode())
+
+        except:
+            print('Invalid response from server')
+
+    def close(self):
+        self.sock.close()
+        self.sock = None
+
     def main(self):
-        self.sock = self.__get_connection()
         while True:
-            mssg = input('input > ')
-            if mssg == 'exit':
-                self.sock.close()
-                print('Connection refused')
+            u_command = input('Введите команду на отправку на сервер:\n\n''
+                              '(0) exit\n>>')
+
+            if u_command == 'exit':
                 break
-            self.sock.send(mssg.encode())
 
-            data = self.sock.recv(1024)
-            print(f"Recieved data from server - {data.decode()}")
+            self.send_command(u_command)
+            self.close()
 
-
-client = Client()
-
-client.main()
+cl = Client()
+cl.main()

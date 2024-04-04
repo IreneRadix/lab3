@@ -1,95 +1,30 @@
 import socket
-import sys
-import time
-import threading
-import os
-
 from program import Program
+from threading import Thread
 
 prog = Program()
 
-
-def run_server(port=9090):
-    serv_sock = create_serv_sock(port)
-    cid = 0
-    while True:
-        client_sock = accept_client_conn(serv_sock, cid)
-        t = threading.Thread(target=serve_client,
-                             args=(serv_sock, client_sock, cid))
-        t.start()
-        cid += 1
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(('localhost', 65432))
+s.listen(3)
 
 
-def serve_client(serv_sock, client_sock, cid):
-    while True:
-        request = read_request(client_sock)
-        if request is None:
-            print(f'Client #{cid} unexpectedly disconnected')
-            break
-        else:
-            if 'exit' in request.decode('utf-8'):
-                write_response_close(client_sock, cid)
-                break
-            if 'sstop' in request.decode('utf-8'):
-                write_response_closes(serv_sock, client_sock, cid)
-                break
-            response = handle_request(request)
-            write_response(client_sock, response)
+def handle_commands(client):
+    data = client.recv(1024)
+    if data.decode().startswith('var_1_ch_dir'):
+        new_dir = data.decode().split('var_1_ch_dir', 1)[1].strip()
+        prog.update_directory(new_dir)
+        client.sendall(b'ok your changes accepted')
+
+    if data.decode() == 'var_1_get_file':
+        prog.save_file_info(prog.get_directory_data())
+        file_data = prog.get_binary_file_info()
+        client.sendall(file_data)
+    client_socket.close()
 
 
-def create_serv_sock(serv_port):
-    serv_sock = socket.socket(socket.AF_INET,
-                              socket.SOCK_STREAM,
-                              proto=0)
-    serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+while True:
+    client_socket, address = s.accept()
+    print("Connected by", address)
+    Thread(target=handle_commands, args=(client_socket,)).start()
 
-    serv_sock.bind(('', serv_port))
-    serv_sock.listen()
-    return serv_sock
-
-
-def accept_client_conn(serv_sock, cid):
-    client_sock, client_addr = serv_sock.accept()
-    print(f'Client #{cid} connected '
-          f'{client_addr[0]}:{client_addr[1]}')
-    return client_sock
-
-
-def read_request(client_sock):
-    request = bytearray()
-    try:
-        request = client_sock.recv(1024)
-        if not request:
-            # Клиент преждевременно отключился.
-            return None
-        return request
-
-    except ConnectionResetError:
-        # Соединение было неожиданно разорвано.
-        return None
-    except:
-        raise
-
-
-def handle_request(request):
-    if request.decode('utf-8') == 'var_1':
-        return prog.get_directory_data().encode('utf-8')
-
-
-def write_response(client_sock, response):
-    client_sock.sendall(response)
-
-
-def write_response_close(client_sock, cid):
-    client_sock.close()
-    print(f'Client #{cid} has been served')
-
-
-def write_response_closes(serv_sock, client_sock, cid):
-    client_sock.close()
-    serv_sock.close()
-    print(f'Client #{cid} has been stoped server')
-
-
-if __name__ == '__main__':
-    run_server(port=9090)
