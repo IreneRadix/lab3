@@ -1,4 +1,5 @@
 import socket
+from dopclient import *
 
 
 class Client:
@@ -46,8 +47,31 @@ class Client:
             if u_command == 'exit':
                 break
 
-            self.send_command(u_command)
-            self.close()
+            if u_command == 'var_2_1':
+                self.sock = self.__get_connection()
+                numbers_list = []
+                while True:
+                    user_input = input("Введите число или пустую строку для завершения: ")
+                    if not user_input:
+                        break
+                    number = int(user_input)
+                    numbers_list.append(int(number))
+                self.sock.send('var_2_1'.encode())
+                send_data_to_program1(numbers_list, self.sock)
+            elif u_command == 'var_2_2':
+                self.sock = self.__get_connection()
+                folder_name = input("Введите номер запуска программы(время создания директории): ")
+                file_name = input("Введите номер дерева для получения(название файла): ")
+                self.sock.send('var_2_2'.encode())
+                file_data = request_file_from_program1(folder_name, file_name, self.sock)
+                with open(file_name + ".json", 'w') as file:
+                    json.dump(file_data, file, indent=4)
+                print(file_data)
+
+            else:
+                self.send_command(u_command)
+
+        self.close()
 
 cl = Client()
 cl.main()
