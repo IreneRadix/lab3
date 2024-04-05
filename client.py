@@ -71,7 +71,7 @@ class Client:
             else:
                 self.send_command(u_command)
 
-        self.close()
+            self.close()
 
 cl = Client()
 cl.main()
