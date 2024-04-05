@@ -1,83 +1,52 @@
-
 import socket
-import sys
-import time
-import threading
-import os
+import json
+from program import Program
+from threading import Thread
 
-def run_server(port=9090):
-  serv_sock = create_serv_sock(port)
-  cid = 0
-  while True:
-    client_sock = accept_client_conn(serv_sock, cid)
-    t = threading.Thread(target=serve_client,
-                         args=(serv_sock, client_sock, cid))
-    t.start()
-    cid += 1
+prog = Program()
 
-def serve_client(serv_sock, client_sock, cid):
-  while True:
-    request = read_request(client_sock)
-    if request is None:
-      print(f'Client #{cid} unexpectedly disconnected')
-      break
-    else:
-      if 'exit' in request.decode('utf-8'):
-        write_response_close(client_sock, cid)
-        break
-      if 'sstop' in request.decode('utf-8'):
-        write_response_closes(serv_sock, client_sock, cid)
-        break
-      response = handle_request(request)
-      write_response(client_sock, response)
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(('localhost', 65432))
+s.listen(3)
 
-def create_serv_sock(serv_port):
-  serv_sock = socket.socket(socket.AF_INET,
-                            socket.SOCK_STREAM,
-                            proto=0)
-  serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+def make_file():
+  path_dirs = os.getenv('PATH').split(os.pathsep)
+  data = {}
 
-  serv_sock.bind(('', serv_port))
-  serv_sock.listen()
-  return serv_sock
+  for path_dir in path_dirs:
+    for root, dirs, files in os.walk(path_dir):
+      executables = [f for f in files if os.access(os.path.join(root, f), os.X_OK)]
+      if executables:
+        data[root] = executables
 
-def accept_client_conn(serv_sock, cid):
-  client_sock, client_addr = serv_sock.accept()
-  print(f'Client #{cid} connected '
-        f'{client_addr[0]}:{client_addr[1]}')
-  return client_sock
+  with open('./program_data.json', 'w') as file:
+    json.dump(data, file, indent=4)
 
-def read_request(client_sock):
-  request = bytearray()
-  try:
-    request = client_sock.recv(1024)
-    if not request:
-      # Клиент преждевременно отключился.
-      return None
-    return request
+  f = open('./program_data.json')
+  resp = f.read()
+  f.close()
 
-  except ConnectionResetError:
-    # Соединение было неожиданно разорвано.
-    return None
-  except:
-    raise
+  return resp.encode()
 
-def handle_request(request):
-  #time.sleep(5)
-  return request[::-1]
+def handle_commands(client):
+    data = client.recv(1024)
+    if data.decode().startswith('CH_DIR'):
+        new_dir = data.decode().split('CH_DIR', 1)[1].strip()
+        prog.update_directory(new_dir)
+        client.sendall(b'ok your changes accepted')
 
-def write_response(client_sock, response):
-  client_sock.sendall(response)
+    if data.decode() == 'GET_FILE':
+        prog.save_file_info(prog.get_directory_data())
+        file_data = prog.get_binary_file_info()
+        client.sendall(file_data)
+    client_socket.close()
 
-def write_response_close(client_sock, cid):
-  client_sock.close()
-  print(f'Client #{cid} has been served')
+    if data.decode() == 'GET_JSON_FILE':
+        client.sendall(make_file())
 
-def write_response_closes(serv_sock, client_sock, cid):
-  client_sock.close()
-  serv_sock.close()
-  print(f'Client #{cid} has been stoped server')
-  os._exit(0)
 
-if __name__ == '__main__':
-  run_server(port=9090)
+
+while True:
+    client_socket, address = s.accept()
+    print("Connected by", address)
+    Thread(target=handle_commands, args=(client_socket,)).start()
