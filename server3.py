@@ -35,7 +35,3 @@ print('Сервер запущен. Ожидание подключения...')
 while True:
     conn, addr = server_socket.accept()
     get_request(conn, addr)
-    # try:
-    #     data = conn.recv(1024)
-    # except (ConnectionError, OSError):
-    #     break
