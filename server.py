@@ -42,7 +42,6 @@ def handle_commands(client):
         prog.save_file_info(prog.get_directory_data())
         file_data = prog.get_binary_file_info()
         client.sendall(file_data)
-    client_socket.close()
 
     if data.decode() == 'GET_JSON_FILE':
         client.sendall(make_file())
@@ -74,6 +73,8 @@ def handle_commands(client):
                         data = json.load(file)
                         string = json.dumps(data)
                         client.send(struct.pack(f'I{len(string)}s', len(string), string.encode()))
+    client_socket.close()
+
 
 while True:
     client_socket, address = s.accept()
